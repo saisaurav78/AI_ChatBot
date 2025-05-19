@@ -1,66 +1,57 @@
+import { useEffect, useRef } from 'react'; 
 import chatStore from '../store/chatStore';
 import { observer } from 'mobx-react-lite';
 
 const ChatPage = observer(() => {
-  const handleFormSubmit = (e) => {
+  const messagesEndRef = useRef(null);
+
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     const input = e.target.querySelector('input');
-    const message = input.value;
-    if (message.trim()) {
-        chatStore.addMessage({ text: message, sender: 'user' });
-        chatStore.setLoading(true);
-        setTimeout(() => {  
-            chatStore.addMessage({ text: "I'm just a bot, but I'm here to help!", sender: 'AI' });
-            chatStore.setLoading(false);
-        }, 1000);
-      input.value = ''; 
-    }
+    const message = input.value.trim();
+    if (!message) return;
+
+    input.value = '';
+    await chatStore.sendMessage(message);
   };
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatStore.messages.length]);
 
   return (
     <div className='flex w-full items-center justify-center min-h-screen bg-gray-100 px-4'>
-      <div className='w-full max-w-xl h-[80vh] bg-blue-500 border border-gray-300 rounded-2xl shadow-xl p-4 sm:p-6'>
-        <div className='flex flex-col items-center justify-self-start mb-4'>
+      <div className='w-full max-w-xl h-[80vh] bg-blue-500 border border-gray-300 rounded-2xl shadow-xl p-2'>
+        <div className='flex flex-col items-center justify-start'>
           <h1 className='text-lg font-bold text-white text-center'>AI Chat</h1>
-          <p className='text-sm text-white text-center'>Talk to the AI</p>
+          <p className='text-sm text-white text-center'>Talk with an AI assistant</p>
+          {chatStore.typing && (
+            <p className='text-sm text-white animate-pulse'>AI is typing...</p>
+          )}
         </div>
 
-        <div className='flex flex-col h-[calc(100%-6rem)] mt-8 sm:mt-12 w-full bg-white rounded-xl shadow-md p-3 sm:p-4'>
+        <div className='flex flex-col h-[calc(100%-6rem)] mt-12 w-full bg-white rounded-xl shadow-md p-3'>
           <div className='flex-1 overflow-y-auto rounded-lg p-3 sm:p-4 mb-3 sm:mb-4'>
-            {chatStore.loading ? (
-              <div className='flex items-center justify-center h-full'>
-                <svg
-                  className='animate-spin h-5 w-5 text-blue-500'
-                  xmlns='http://www.w3.org/2000/svg'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    fill='none'
-                    d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1.5 15h-3v-3h3v3zm0-4.5h-3V7h3v5.5z'
-                  />
-                </svg>
-              </div>
-            ) : (
-              chatStore.messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`mb-3 p-3 rounded-lg ${
-                    message.sender === 'user'
-                      ? 'bg-blue-100 ml-auto max-w-[70%]'
-                      : 'bg-gray-100 mr-auto max-w-[70%]'
+            {chatStore.messages.map((message, index) => (
+              <div
+                key={index}
+                className={`mb-3 p-3 rounded-lg ${
+                  message.sender === 'user'
+                    ? 'bg-blue-100 ml-auto max-w-[70%]'
+                    : 'bg-gray-100 mr-auto max-w-[70%]'
+                }`}
+              >
+                <p className='text-gray-800 break-words'>{message.text} </p>
+                <p
+                  className={`text-xs mt-1 ${
+                    message.sender === 'user' ? 'text-blue-600 text-right' : 'text-gray-500'
                   }`}
                 >
-                  <p className='text-gray-800 break-words'>{message.text}</p>
-                  <p
-                    className={`text-xs mt-1 ${
-                      message.sender === 'user' ? 'text-blue-600 text-right' : 'text-gray-500'
-                    }`}
-                  >
-                    {message.sender}
-                  </p>
-                </div>
-              ))
-            )}
+                  {message.sender}
+                </p>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
           </div>
           <hr className='my-3 sm:my-4 border-gray-300 w-full' />
           <form className='flex items-center' onSubmit={handleFormSubmit}>

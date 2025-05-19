@@ -1,4 +1,4 @@
-import  { useState } from 'react';
+import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import authStore from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
@@ -11,8 +11,8 @@ const LoginPage = observer(() => {
   const handleLogin = async (e) => {
     e.preventDefault();
     await authStore.login(username, password);
-    if (authStore.token) {
-      navigate('/chat'); 
+    if (authStore.isAuthenticated) {
+      navigate('/chat');
     }
   };
 
@@ -43,9 +43,10 @@ const LoginPage = observer(() => {
         />
 
         {authStore.error && <p className='text-red-500 text-sm text-center'>{authStore.error}</p>}
+
         <div className='text-gray-500 text-sm text-center'>
-          <p>username: admin</p>
-          <p>password: admin123</p>
+          <p>username: user</p>
+          <p>password: user123</p>
         </div>
 
         <button

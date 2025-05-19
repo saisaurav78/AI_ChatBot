@@ -1,23 +1,50 @@
-import { makeAutoObservable } from "mobx";    
-class ChatStore { 
-    messages = [
-        { text: "Hello! How can I assist you today?", sender: "AI" },
-        { text: "I'm here to help you with your queries.", sender: "AI" },
-        { text: "Feel free to ask me anything!", sender: "AI" }
-    ]
-    loading = false
-    constructor() {
-        makeAutoObservable(this)
+import axios from 'axios';
+import { makeAutoObservable } from 'mobx';
+
+const BASE_URL = import.meta.env.VITE_BASE_URL;
+
+class ChatStore {
+  messages = [];
+  typing = false;
+
+  constructor() {
+    makeAutoObservable(this);
+  }
+
+  sendMessage = async (text) => {
+    this.addMessage({ sender: 'user', text });
+    this.setTyping(true);
+
+    try {
+      const res = await axios.post(
+        `${BASE_URL}/chat`,
+        { message: text },
+        { withCredentials: true },
+      );
+
+      const AI_message = res.data?.message || 'Sorry, no response.';
+      this.addMessage({ sender: 'AI', text: AI_message });
+    } catch (error) {
+      console.error('Error occurred while sending chat message:', error);
+      this.addMessage({ sender: 'AI', text: 'Sorry, something went wrong.' });
+    } finally {
+      this.setTyping(false);
     }
-    addMessage = (message) => { 
-        this.messages.push(message)
-    }   
-    setLoading = (status) => { 
-        this.loading = status
-    }
-    clearMessages = () => { 
-        this.messages = []
-    }
+  };
+
+  addMessage = (msg) => {
+    // Ensures reactive update
+    this.messages = [...this.messages, msg];
+  };
+
+  setTyping = (status) => {
+    this.typing = status;
+  };
+
+  clearMessages = () => {
+    this.messages = [];
+  };
 }
-const chatStore = new ChatStore()
-export default chatStore
+
+const chatStore = new ChatStore();
+export default chatStore;
