@@ -1,0 +1,11 @@
+Q: What are your business hours?
+A: We operate Monday to Friday from 9 AM to 6 PM.
+
+Q: Where is your company located?
+A: Our headquarters is located in New York City.
+
+Q: How can I contact customer support?
+A: You can contact us via email at support@company.com or call 123-456-7890.
+
+Q: Do you offer international shipping?
+A: Yes, we ship worldwide. Shipping fees and times vary by location.

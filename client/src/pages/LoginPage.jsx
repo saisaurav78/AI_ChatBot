@@ -30,6 +30,7 @@ const LoginPage = observer(() => {
           type='text'
           placeholder='Username'
           value={username}
+          required
           onChange={(e) => setUsername(e.target.value)}
           className='w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
         />
@@ -38,6 +39,7 @@ const LoginPage = observer(() => {
           type='password'
           placeholder='Password'
           value={password}
+          required
           onChange={(e) => setPassword(e.target.value)}
           className='w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
         />
@@ -53,7 +55,7 @@ const LoginPage = observer(() => {
           type='submit'
           className='w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition duration-200'
         >
-          Login
+         {authStore.loading? "logging in.." : "Login"}
         </button>
       </form>
     </div>

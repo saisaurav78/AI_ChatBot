@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 dotenv.config();
 
-
+app.use('/uploads', express.static('uploads'));
 app.use(cookieParser());
 app.use(
   cors({

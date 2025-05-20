@@ -7,12 +7,17 @@ class AuthStore {
   user = null;
   error = null;
   isAuthenticated = false;
+  loading = false;
 
   constructor() {
     makeAutoObservable(this);
   }
+  setLoading = (loading) => {   
+    this.loading = loading;
+  }
 
   login = async (username, password) => {
+    this.setLoading(true);
     try {
       const response = await axios.post(
         `${BASE_URL}/auth/login`,
@@ -28,6 +33,8 @@ class AuthStore {
       this.error = error.response?.data?.message || 'Login failed';
       this.user = null;
       this.isAuthenticated = false;
+    } finally {
+      this.setLoading(false);
     }
   };
 
