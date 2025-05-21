@@ -3,9 +3,12 @@ import chatStore from '../store/chatStore';
 import authStore from '../store/authStore';
 import { observer } from 'mobx-react-lite';
 
+const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
+
 const ChatPage = observer(() => {
   const messagesEndRef = useRef(null); // Ref for auto-scrolling to last message
   const [file, setFile] = useState(null); // Selected file state
+  const [error, setError] = useState(''); // Error message state
 
   useEffect(() => {
     chatStore.loadChat(); // Load chat messages once on mount
@@ -16,14 +19,38 @@ const ChatPage = observer(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatStore.messages.length]);
 
+  const handleFileChange = (e) => {
+    setError(''); // Clear previous errors
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
+
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      setError('File size exceeds the 4MB limit');
+      setFile(null);
+    } else {
+      setFile(selectedFile);
+    }
+  };
+
+  const removeFile = () => {
+    setFile(null);
+    setError('');
+  };
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     const input = e.target.querySelector('input[type="text"]');
     const message = input.value.trim();
     if (!message && !file) return; // Prevent empty submission
     input.value = '';
-    await chatStore.sendMessage({ content: message, file }); // Send message with optional file
-    setFile(null); // Reset file after sending
+    setError('');
+
+    try {
+      await chatStore.sendMessage({ content: message, file });
+      setFile(null); // Reset file after sending
+    } catch (err) {
+      setError('Failed to send message');
+    }
   };
 
   return (
@@ -73,7 +100,16 @@ const ChatPage = observer(() => {
                       : 'bg-gray-100 mr-auto max-w-[70%]'
                   }`}
                 >
-                  <p className='text-gray-800 break-words whitespace-pre-wrap'>{msg.text}</p>
+                  {/* Show message text if exists */}
+                  {msg.text && (
+                    <p className='text-gray-800 break-words whitespace-pre-wrap'>{msg.text}</p>
+                  )}
+
+                  {/* Show file info if file exists */}
+                  {msg.file && (
+                    <p className='text-gray-600 italic text-sm mt-1'> File: {msg.file.name}</p>
+                  )}
+
                   <div
                     className={`text-xs mt-1 ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}
                   >
@@ -89,6 +125,9 @@ const ChatPage = observer(() => {
           </div>
 
           <hr className='my-3 border-gray-300 w-full' />
+
+          {/* Error message */}
+          {error && <div className='mb-2 text-red-600 text-center font-semibold'>{error}</div>}
 
           {/* Input */}
           <form className='flex items-center gap-2' onSubmit={handleFormSubmit}>
@@ -124,12 +163,24 @@ const ChatPage = observer(() => {
                 title={file ? file.name : 'upload file'}
                 hidden
                 accept='.txt,.pdf'
-                onChange={(e) => setFile(e.target.files[0])}
+                onChange={handleFileChange}
               />
               {file && (
                 <span className='text-xs text-gray-700 truncate max-w-[100px]'>{file.name}</span>
               )}
             </label>
+
+            {/* Remove file button */}
+            {file && (
+              <button
+                type='button'
+                onClick={removeFile}
+                title='Remove selected file'
+                className='text-red-600 hover:text-red-800 text-sm'
+              >
+                ✕
+              </button>
+            )}
 
             {/* Send */}
             <button

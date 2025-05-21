@@ -41,8 +41,9 @@ class ChatStore {
   };
 
   sendMessage = async ({ content, file }) => {
-    this.addMessage({ sender: 'user', text: content || (file ? file.name : '') }); // Add user message locally
-    this.setTyping(true); // Show typing indicator
+    // Add user message locally including file if present
+    this.addMessage({ sender: 'user', text: content || '', file: file || null });
+    this.setTyping(true);
 
     try {
       const formData = new FormData();
@@ -57,7 +58,7 @@ class ChatStore {
       const AI_message = res.data?.message || 'Sorry, no response.';
 
       runInAction(() => {
-        this.addMessage({ sender: 'AI', text: AI_message }); // Add AI response
+        this.addMessage({ sender: 'AI', text: AI_message });
       });
     } catch (error) {
       console.error('Error sending message:', error);
@@ -66,7 +67,7 @@ class ChatStore {
       });
     } finally {
       runInAction(() => {
-        this.setTyping(false); // Hide typing indicator
+        this.setTyping(false);
       });
     }
   };

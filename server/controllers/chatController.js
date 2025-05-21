@@ -3,8 +3,6 @@ import dotenv from 'dotenv';
 import chatModel from '../models/chatModel.js';
 import faqModel from '../models/faqModel.js';
 import multer from 'multer';
-import fs from 'fs';
-import path from 'path';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const pdfParse = require('pdf-parse');
@@ -15,17 +13,11 @@ dotenv.config();
 const endpoint = process.env['AZURE_OPENAI_ENDPOINT'];
 const apiKey = process.env['AZURE_OPENAI_API_KEY'];
 const apiVersion = '2025-01-01-preview';
-const deployment = process.env['AZURE_DEPLOYMENT_NAME']
+const deployment = process.env['AZURE_DEPLOYMENT_NAME'];
 const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
 
-// Setup multer storage for file uploads
-const uploadDir = 'uploads/';
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname),
-});
+// Use memoryStorage for multer to avoid saving files on disk
+const storage = multer.memoryStorage();
 
 export const upload = multer({
   storage,
@@ -44,22 +36,14 @@ export const sendMessage = async (req, res) => {
     }
 
     if (file) {
-      const filePath = path.join(uploadDir, file.filename);
-
-      // Check if uploaded file exists
-      if (!fs.existsSync(filePath)) {
-        return res.status(400).json({ error: 'Uploaded file not found on server' });
-      }
-
       let fileText = '';
 
-      // Extract text from PDF or plain text files
+      // Extract text from PDF or plain text files in memory
       if (file.mimetype === 'application/pdf') {
-        const dataBuffer = fs.readFileSync(filePath);
-        const pdfData = await pdfParse(dataBuffer);
+        const pdfData = await pdfParse(file.buffer);
         fileText = pdfData.text;
       } else if (file.mimetype === 'text/plain') {
-        fileText = fs.readFileSync(filePath, 'utf-8');
+        fileText = file.buffer.toString('utf-8');
       } else {
         return res.status(400).json({ error: 'Unsupported file type' });
       }
@@ -71,11 +55,24 @@ export const sendMessage = async (req, res) => {
         uploadedBy: username,
       });
 
-      // Attempt to delete the uploaded file after processing
-      try {
-        fs.unlinkSync(filePath);
-      } catch (delErr) {
-        console.warn('Failed to delete uploaded file:', delErr.message);
+      // Save filename as user message and a system confirmation message in chat
+      let existingChat = await chatModel.findOne({ user: username });
+
+      const userMessage = { role: 'user', content: file.originalname };
+      const systemMessage = {
+        role: 'system',
+        content: `File '${file.originalname}' uploaded successfully.`,
+      };
+
+      if (existingChat) {
+        existingChat.messages.push(userMessage);
+        existingChat.messages.push(systemMessage);
+        await existingChat.save();
+      } else {
+        await chatModel.create({
+          user: username,
+          messages: [userMessage, systemMessage],
+        });
       }
 
       return res.json({
@@ -85,8 +82,11 @@ export const sendMessage = async (req, res) => {
 
     // If no file, proceed with AI chat interaction
 
-    // Fetch all FAQs uploaded by this user to use as context
-    const userFaqDocs = await faqModel.find({ uploadedBy: username });
+    // Fetch only latest 3 FAQs uploaded by this user to use as context
+    const userFaqDocs = await faqModel
+      .find({ uploadedBy: username })
+      .sort({ uploadedAt: -1 }) // newest first
+      .limit(3);
 
     const companyDataContext = userFaqDocs.length
       ? userFaqDocs.map((doc) => doc.content).join('\n---\n')
@@ -144,11 +144,11 @@ export const sendMessage = async (req, res) => {
   }
 };
 
+
 export const getChatHistory = async (req, res) => {
   try {
     const username = req.user?.username || 'user';
 
-    // Fetch stored chat history for the user
     const chatHistory = await chatModel.findOne({ user: username });
 
     if (!chatHistory) {
@@ -157,7 +157,7 @@ export const getChatHistory = async (req, res) => {
 
     res.status(200).json({ messages: chatHistory.messages });
   } catch (error) {
-    console.error('Error occurred while fetching chat history:', error);
+    console.error('Error in getChatHistory:', error);
     res.status(500).json({
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal Server Error',
     });

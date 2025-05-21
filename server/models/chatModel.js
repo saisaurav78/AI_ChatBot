@@ -10,7 +10,7 @@ const chatSchema = new mongoose.Schema(
       {
         role: {
           type: String,
-          enum: ['user', 'assistant'], // Role of the message sender
+          enum: ['user', 'assistant', 'system'], // Role of the message sender
           required: true,
         },
         content: {
