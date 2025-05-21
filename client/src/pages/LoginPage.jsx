@@ -3,11 +3,19 @@ import { observer } from 'mobx-react-lite';
 import authStore from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * LoginPage component handles user login:
+ * - Controlled inputs for username and password
+ * - Calls authStore.login on form submit
+ * - Navigates to /chat on successful login
+ * - Displays loading state and error messages
+ */
 const LoginPage = observer(() => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
+  // Handles form submit to perform login
   const handleLogin = async (e) => {
     e.preventDefault();
     await authStore.login(username, password);
@@ -55,7 +63,7 @@ const LoginPage = observer(() => {
           type='submit'
           className='w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition duration-200'
         >
-         {authStore.loading? "logging in.." : "Login"}
+          {authStore.loading ? 'logging in..' : 'Login'}
         </button>
       </form>
     </div>

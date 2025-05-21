@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { makeAutoObservable } from 'mobx';
+import { makeAutoObservable, runInAction } from 'mobx';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
@@ -9,32 +9,40 @@ class ChatStore {
   loading = false;
 
   constructor() {
-    makeAutoObservable(this);
+    makeAutoObservable(this); // MobX reactive state
   }
 
   loadChat = async () => {
-    this.loading = true;
+    runInAction(() => {
+      this.loading = true; // Start loading indicator
+    });
+
     try {
       const res = await axios.get(`${BASE_URL}/chat`, { withCredentials: true });
-      this.messages = res.data.messages.map((msg) => ({
-        sender: msg.role === 'user' ? 'user' : 'AI',
-        text: msg.content,
-        time: new Date(msg.timestamp).toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-      }));
+
+      runInAction(() => {
+        // Map API response to message objects
+        this.messages = res.data.messages.map((msg) => ({
+          sender: msg.role === 'user' ? 'user' : 'AI',
+          text: msg.content,
+          time: new Date(msg.timestamp).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+        }));
+      });
     } catch (error) {
       console.error('Failed to load chat:', error);
     } finally {
-      this.loading = false;
+      runInAction(() => {
+        this.loading = false; // Stop loading indicator
+      });
     }
   };
 
   sendMessage = async ({ content, file }) => {
-    this.addMessage({ sender: 'user', text: content || (file ? file.name : '') });
-
-    this.setTyping(true);
+    this.addMessage({ sender: 'user', text: content || (file ? file.name : '') }); // Add user message locally
+    this.setTyping(true); // Show typing indicator
 
     try {
       const formData = new FormData();
@@ -48,19 +56,23 @@ class ChatStore {
 
       const AI_message = res.data?.message || 'Sorry, no response.';
 
-      this.addMessage({
-        sender: 'AI',
-        text: AI_message,
+      runInAction(() => {
+        this.addMessage({ sender: 'AI', text: AI_message }); // Add AI response
       });
     } catch (error) {
       console.error('Error sending message:', error);
-      this.addMessage({ sender: 'AI', text: 'Sorry, something went wrong.' });
+      runInAction(() => {
+        this.addMessage({ sender: 'AI', text: 'Sorry, something went wrong.' });
+      });
     } finally {
-      this.setTyping(false);
+      runInAction(() => {
+        this.setTyping(false); // Hide typing indicator
+      });
     }
   };
 
   addMessage = (msg) => {
+    // Add timestamp and append message to list
     const time = new Date().toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit',
@@ -69,11 +81,11 @@ class ChatStore {
   };
 
   setTyping = (status) => {
-    this.typing = status;
+    this.typing = status; // Update typing status
   };
 
   clearMessages = () => {
-    this.messages = [];
+    this.messages = []; // Clear all messages
   };
 }
 

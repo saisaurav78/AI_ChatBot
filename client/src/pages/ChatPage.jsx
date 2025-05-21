@@ -4,14 +4,15 @@ import authStore from '../store/authStore';
 import { observer } from 'mobx-react-lite';
 
 const ChatPage = observer(() => {
-  const messagesEndRef = useRef(null);
-  const [file, setFile] = useState(null);
+  const messagesEndRef = useRef(null); // Ref for auto-scrolling to last message
+  const [file, setFile] = useState(null); // Selected file state
 
   useEffect(() => {
-    chatStore.loadChat();
+    chatStore.loadChat(); // Load chat messages once on mount
   }, []);
 
   useEffect(() => {
+    // Scroll to bottom when messages update
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatStore.messages.length]);
 
@@ -19,18 +20,18 @@ const ChatPage = observer(() => {
     e.preventDefault();
     const input = e.target.querySelector('input[type="text"]');
     const message = input.value.trim();
-    if (!message && !file) return;
+    if (!message && !file) return; // Prevent empty submission
     input.value = '';
-    await chatStore.sendMessage({ content: message, file });
-    setFile(null);
+    await chatStore.sendMessage({ content: message, file }); // Send message with optional file
+    setFile(null); // Reset file after sending
   };
 
   return (
     <div className='flex w-full items-center justify-center min-h-screen bg-gray-100 px-4'>
       <div className='w-full max-w-xl h-[80vh] bg-blue-500 border border-gray-300 rounded-2xl shadow-xl p-2 relative'>
-        {/* Logout Button */}
+        {/* Logout */}
         <button
-          className='absolute top-2 right-2 p-1 text-white hover:text-gray-200 transition cursor-pointer'
+          className='absolute top-2 right-2 p-1 text-white hover:text-gray-200 cursor-pointer'
           title='Logout'
           onClick={() => confirm('Are you sure you want to logout?') && authStore.logout()}
         >
@@ -51,15 +52,15 @@ const ChatPage = observer(() => {
         </button>
 
         {/* Header */}
-        <div className='flex flex-col items-center justify-start h-12'>
+        <div className='flex flex-col items-center h-12'>
           <h1 className='text-lg font-bold text-white text-center'>AI Chat</h1>
           <p className='text-sm text-white text-center'>Talk with an AI assistant</p>
           {chatStore.typing && <p className='text-sm text-white animate-pulse'>AI is typing...</p>}
         </div>
 
-        {/* Chat Messages Area */}
+        {/* Messages */}
         <div className='flex flex-col h-[calc(100%-6rem)] mt-12 w-full bg-white rounded-xl shadow-md p-3'>
-          <div className='flex-1 overflow-y-auto rounded-lg p-3 sm:p-4 mb-3 sm:mb-4'>
+          <div className='flex-1 overflow-y-auto rounded-lg p-3 mb-3'>
             {chatStore.loading ? (
               <p className='text-sm text-center text-gray-500'>Loading...</p>
             ) : (
@@ -73,13 +74,13 @@ const ChatPage = observer(() => {
                   }`}
                 >
                   <p className='text-gray-800 break-words whitespace-pre-wrap'>{msg.text}</p>
-                  <div className='text-xs mt-1 text-right'>
-                    <span
-                      className={`${msg.sender === 'user' ? 'text-blue-600' : 'text-gray-500'}`}
-                    >
+                  <div
+                    className={`text-xs mt-1 ${msg.sender === 'user' ? 'text-right' : 'text-left'}`}
+                  >
+                    <span className={msg.sender === 'user' ? 'text-gray-600' : 'text-blue-600'}>
                       {msg.sender}
                     </span>
-                    {msg.time && <span className='ml-2 text-gray-400'>{msg.time}</span>}
+                    {msg.time && <div className='text-gray-600'>{msg.time}</div>}
                   </div>
                 </div>
               ))
@@ -87,21 +88,20 @@ const ChatPage = observer(() => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Divider */}
-          <hr className='my-3 sm:my-4 border-gray-300 w-full' />
+          <hr className='my-3 border-gray-300 w-full' />
 
-          {/* Input Area */}
-          <form className='flex items-center gap-2 sm:gap-3' onSubmit={handleFormSubmit}>
+          {/* Input */}
+          <form className='flex items-center gap-2' onSubmit={handleFormSubmit}>
             <input
               type='text'
               placeholder='Type your message...'
-              className='flex-1 p-2 sm:p-3 rounded-lg focus:outline-none text-sm sm:text-base min-w-0'
+              className='flex-1 p-2 rounded-lg focus:outline-none text-sm min-w-0'
             />
 
             {/* File Upload */}
             <label
               htmlFor='file'
-              className='cursor-pointer p-1.5 sm:p-2 rounded-full hover:bg-gray-100 transition-colors flex items-center gap-1'
+              className='cursor-pointer p-1.5 rounded-full hover:bg-gray-100 transition-colors flex items-center gap-1'
               title={file ? file.name : 'upload file'}
             >
               <svg
@@ -110,7 +110,7 @@ const ChatPage = observer(() => {
                 viewBox='0 0 24 24'
                 strokeWidth={1.5}
                 stroke='currentColor'
-                className='w-5 h-5 sm:w-6 sm:h-6'
+                className='w-5 h-5'
               >
                 <path
                   strokeLinecap='round'
@@ -122,7 +122,6 @@ const ChatPage = observer(() => {
                 type='file'
                 id='file'
                 title={file ? file.name : 'upload file'}
-                name='file'
                 hidden
                 accept='.txt,.pdf'
                 onChange={(e) => setFile(e.target.files[0])}
@@ -132,10 +131,10 @@ const ChatPage = observer(() => {
               )}
             </label>
 
-            {/* Send Button */}
+            {/* Send */}
             <button
               type='submit'
-              className='bg-blue-500 text-white p-1.5 sm:p-2 ml-1 sm:ml-2 rounded-lg hover:bg-blue-600 transition-colors flex-shrink-0'
+              className='bg-blue-500 text-white p-1.5 ml-1 rounded-lg hover:bg-blue-600 transition-colors flex-shrink-0'
               aria-label='Send message'
             >
               <svg
@@ -144,7 +143,7 @@ const ChatPage = observer(() => {
                 viewBox='0 0 24 24'
                 strokeWidth={1.5}
                 stroke='currentColor'
-                className='w-5 h-5 sm:w-6 sm:h-6'
+                className='w-5 h-5'
               >
                 <path
                   strokeLinecap='round'
