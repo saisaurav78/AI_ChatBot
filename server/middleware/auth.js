@@ -25,8 +25,17 @@ export const verifyToken = (req, res, next) => {
 
 // Route handler to logout user by clearing the auth token cookie
 export const logout = (req, res) => {
-  // Clear the 'token' cookie from client
-  res.clearCookie('token');
+  // Clear the 'token' cookie from the client
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+  });
+
+  // Prevent caching of the logout response
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
 
   // Send success response
   res.status(200).json({ message: 'Logged out' });
