@@ -12,8 +12,16 @@ const App = observer(() => {
     authStore.fetchUser(); // Fetch user auth status on component mount
   }, []);
 
+  // Improved loading screen UI with centered spinner and dark modal overlay
   if (authStore.loading) {
-    return <div>Loading...</div>; // Show loading state while fetching user data
+    return (
+      <div className='fixed inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center z-50'>
+        <div className='animate-spin rounded-full h-16 w-16 border-t-2 border-blue-500 border-solid'></div>
+        <p className='mt-4 text-lg text-gray-200 font-semibold'>
+          Hang tight... Preparing your chat 🤖
+        </p>
+      </div>
+    );
   }
 
   return (

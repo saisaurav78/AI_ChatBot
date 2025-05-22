@@ -13,7 +13,7 @@ class AuthStore {
   user = null;
   error = null;
   isAuthenticated = false;
-  loading = false;
+  loading = true;
 
   constructor() {
     makeAutoObservable(this);
@@ -63,7 +63,6 @@ class AuthStore {
    * Resets auth state on failure or no user data.
    */
   fetchUser = async () => {
-    this.setLoading(true);
     try {
       const response = await axios.get(`${BASE_URL}/auth/user`, {
         withCredentials: true,
@@ -77,12 +76,24 @@ class AuthStore {
         } else {
           this.user = null;
           this.isAuthenticated = false;
+          this.error = null;
         }
       });
     } catch (error) {
       runInAction(() => {
-        this.user = null;
-        this.isAuthenticated = false;
+        if (error.response?.status === 401) {
+          this.user = null;
+          this.isAuthenticated = false;
+          this.error = null;
+        } else if (error.response?.status === 403) {
+          this.user = null;
+          this.isAuthenticated = false;
+          this.error = 'Session expired. Please log in again.';
+        } else {
+          this.user = null;
+          this.isAuthenticated = false;
+          this.error = 'Failed to fetch user session. Please try again later.';
+        }
       });
     } finally {
       runInAction(() => {
