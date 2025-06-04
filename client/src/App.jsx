@@ -16,7 +16,7 @@ const App = observer(() => {
   if (authStore.loading) {
     return (
       <div className='fixed inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center z-50'>
-        <div className='animate-spin rounded-full h-16 w-16 border-t-2 border-blue-500 border-solid'></div>
+        <div className='h-16 w-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin'></div>
         <p className='mt-4 text-lg text-gray-200 font-semibold'>
           Hang tight... Preparing your chat 🤖
         </p>

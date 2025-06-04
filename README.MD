@@ -81,15 +81,12 @@ cd frontend
 npm install
 npm run dev
 
-# Login Credentials
-Username: user
-Password: user123
 ```
 
 ## 📸 Screenshots
 
-### Login Page
-![Login](./screenshots/loginPage.png)
+### Login/Register Page
+![Login](./screenshots/login.jpg)
 
 ### Chat with AI
 ![Chat](./screenshots/chatPage.png)

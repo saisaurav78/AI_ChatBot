@@ -28,7 +28,7 @@ export const sendMessage = async (req, res) => {
   try {
     const { message } = req.body;
     const file = req.file;
-    const username = req.user?.username || 'user';
+    const username = req.user?.username;
 
     // Validate input: must have either a message or a file
     if ((!message || typeof message !== 'string' || message.trim() === '') && !file) {
@@ -147,7 +147,7 @@ export const sendMessage = async (req, res) => {
 
 export const getChatHistory = async (req, res) => {
   try {
-    const username = req.user?.username || 'user';
+    const username = req.user?.username;
 
     const chatHistory = await chatModel.findOne({ user: username });
 

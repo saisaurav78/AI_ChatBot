@@ -14,6 +14,8 @@ class AuthStore {
   error = null;
   isAuthenticated = false;
   loading = true;
+  authLoading = false; // authLoading is used to track loading state during auth operations
+  successMessage = null; // Used for displaying messages to the user
 
   constructor() {
     makeAutoObservable(this);
@@ -23,14 +25,13 @@ class AuthStore {
   setLoading = (loading) => {
     this.loading = loading;
   };
-
   /**
    * Logs in user with username and password.
    * On success, fetches user data and clears errors.
    * On failure, sets error message and resets auth state.
    */
   login = async (username, password) => {
-    this.setLoading(true);
+    this.authLoading = true;
     try {
       const response = await axios.post(
         `${BASE_URL}/auth/login`,
@@ -52,10 +53,54 @@ class AuthStore {
       });
     } finally {
       runInAction(() => {
-        this.setLoading(false);
+        this.authLoading = false;
       });
     }
   };
+
+   register = async (username, password, confirmPassword) => {
+    this.authLoading = true;
+    this.error = null;
+    this.successMessage = null;
+
+    if (!username || !password) {
+      runInAction(() => {
+        this.error = 'Username and password are required';
+        this.authLoading = false;
+      });
+      return;
+    }
+    if (password !== confirmPassword) {
+      runInAction(() => {
+        this.error = 'Passwords do not match';
+        this.authLoading = false;
+      });
+      return;
+    }
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/auth/register`,
+        { username, password },
+        { withCredentials: true },
+      );
+
+      if (response.status === 201) {
+        runInAction(() => {
+          this.successMessage = 'Registration successful! Please login.';
+          this.error = null;
+        });
+      }
+    } catch (error) {
+      runInAction(() => {
+        this.error = error.response?.data?.message || 'Registration failed';
+        this.authLoading = false;
+      });
+    } finally {
+      runInAction(() => {
+        this.authLoading = false;
+      });
+    }
+  }
 
   /**
    * Fetches current logged-in user data.
